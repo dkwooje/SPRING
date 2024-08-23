@@ -1,0 +1,329 @@
+다음과 같은 기능을 수행할 수 있는 Spring MVC Project를 작성하려고 한다.
+제시된 조건을 활용하여 요구사항을 충족할 수 있는 코드를 작성하고 프로젝트 구조를 캡처하여 첨부하시오.
+
+[기능]
+- 프로젝트 실행 시 로그인 화면이 나타남
+- 알맞은 아이디, 비밀번호 입력 시 로그인 입력창이 사라지며
+  "[회원명]님 환영합니다." 문구 출력
+- 잘못된 아이디, 비밀번호 입력 시 "로그인 실패" 경고창 출력
+
+
+[요구 사항]
+1. 프로젝트에 사용할 라이브러리를 pom.xml을 이용하여 추가(mavenrepository 이용)
+- ojdbc6 (version : 11.2.0.3)
+- mybatis (version : 3.5.4)
+- mybatis-spring (version : 2.0.3)
+- spring-jdbc (version : 5.2.3.RELEASE)
+- commons-dbcp (version : 1.4)
+
+2. MemberController 클래스 작성
+1)  로그인 요청 URL을 매핑하여 서비스 호출 및 뷰 연결처리를 하는 메소드
+   public String memberLogin() 작성.
+   (매개변수는 자유롭게 선언, 반환값은 return "";)
+2) 로그인 실패시 "로그인 실패" 메시지 출력
+
+3. MemberService 인터페이스, MemberServiceImpl 클래스 작성
+
+4. MemberDAO 클래스 작성
+
+5. mybatis-config.xml 작성
+ 1) Member 클래스의 별칭을 Member로 지정
+ 2) member-mapper.xml 파일을 mapper로 등록
+
+6. member-mapper.xml 작성
+ 1) VO 클래스와 Member 테이블 조회 결과를 매핑할 resultMap 작성 (id="memberResultSet")
+ 2) 로그인 기능을 수행하기 위한 select 엘리먼트 작성 (id="loginMember)
+
+
+[조건]
+- 프로젝트명 : ncsTest1
+- 최상위 패키지 : com.ncs.test
+- JSTL 라이브러리 파일 추가
+
+- 테이블 & 샘플데이터
+CREATE TABLE MEMBER(
+  MEMBER_ID VARCHAR2(30) PRIMARY KEY,
+  MEMBER_PWD VARCHAR2(100) NOT NULL,
+  MEMBER_NM VARCHAR2(15) NOT NULL,
+  MEMBER_ENROLL_DT DATE DEFAULT SYSDATE
+);
+INSERT INTO MEMBER VALUES('user01', 'pass01', '홍길동', DEFAULT);
+
+- 인터페이스 생성
+com.ncs.test.member.model.service.MemberService
+
+- 클래스 생성
+com.ncs.test.member.controller.MemberController
+com.ncs.test.member.model.dao.MemberDAO
+com.ncs.test.member.model.service.MemberServiceImpl (MemberService 상속)
+com.ncs.test.member.model.vo.Member
+
+- Member 클래스의 필드 (생성자, get/setter, toString 작성)
+private String memberId;
+private String memberPwd;
+private String memberName;
+private Date memberEnrollDate; // (import : java.sql.Date)
+
+- src/main/resources 폴더에 mybatis 관련 설정 파일 추가
+mybatis-config.xml
+mappers/member-mapper.xml
+
+
+-------------------- web.xml 추가 내용 --------------------
+
+<!-- welcome-file 설정 -->
+<welcome-file-list>
+    <welcome-file>index.jsp</welcome-file>
+</welcome-file-list>
+
+<!-- 문자 인코딩 필터 설정 -->
+<filter>
+    <filter-name>encodingFilter</filter-name>
+    <filter-class>org.springframework.web.filter.CharacterEncodingFilter
+    </filter-class>
+    <init-param>
+        <param-name>encoding</param-name>
+        <param-value>UTF-8</param-value>
+    </init-param>
+</filter>
+<filter-mapping>
+    <filter-name>encodingFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+
+
+-------------------- pom.xml 추가/수정 내용 --------------------
+
+<!-- Java, SpringFramework 버전 수정 -->
+<properties>
+    <java-version>1.8</java-version>
+    <org.springframework-version>5.2.3.RELEASE</org.springframework-version>
+    <org.aspectj-version>1.6.10</org.aspectj-version>
+    <org.slf4j-version>1.6.6</org.slf4j-version>
+</properties>
+ 
+
+<!-- ojdbc6 사설 저장소 추가 -->
+<repositories>
+    <repository>
+        <id>Spring Plugins</id>
+        <url>https://repo.spring.io/plugins-release/</url>
+    </repository>
+</repositories>
+
+
+
+-------------------- root-context.xml 추가 --------------------
+
+<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+    
+    <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/>
+    <property name="url" value="jdbc:oracle:thin:@localhost:1521:xe"/>
+    <property name="username" value="ncsUser"/>
+    <property name="password" value="ncsUser"/>
+    <property name="defaultAutoCommit" value="false"/>
+</bean>
+
+
+[답안 시작]
+'------------------ pom.xml ------------------
+<!-- https://mvnrepository.com/artifact/com.oracle/ojdbc6 -->
+<dependency>
+ <groupId>com.oracle</groupId>
+ <artifactId>ojdbc6</artifactId>
+ <version>11.2.0.3</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.mybatis/mybatis -->
+<dependency>
+ <groupId>org.mybatis</groupId>
+ <artifactId>mybatis</artifactId>
+ <version>3.5.4</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.mybatis/mybatis-spring -->
+<dependency>
+ <groupId>org.mybatis</groupId>
+ <artifactId>mybatis-spring</artifactId>
+ <version>2.0.3</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc -->
+<dependency>
+ <groupId>org.springframework</groupId>
+ <artifactId>spring-jdbc</artifactId>
+ <version>${org.springframework-version}</version>
+ <!-- 위 properties의 지정한 Spring 버전을 따라감 -->
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/commons-dbcp/commons-dbcp -->
+<dependency>
+ <groupId>commons-dbcp</groupId>
+ <artifactId>commons-dbcp</artifactId>
+ <version>1.4</version>
+</dependency>
+
+------------------ MemberController ------------------
+
+package com.ncs.test.member.conroller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.ncs.test.member.model.service.MemberService;
+import com.ncs.test.member.model.vo.Member;
+
+@Controller
+public class MemberContoller {
+ @Autowired
+ private MemberService memberService;
+ 
+ @RequestMapping("login")
+ public String memberLogin(Member member, Model model, HttpServletRequest request) {
+  Member loginMember = memberService.loginMember(member);
+  HttpSession session = request.getSession();
+  if(loginMember == null) {
+   model.addAttribute("msg", "로그인 실패");
+   return "common/errorPage";
+  }else {
+   session.setAttribute("loginMember", loginMember);
+   return "redirect:/";
+  }
+  
+ }
+}
+
+------------------ MemberService ------------------
+package com.ncs.test.member.model.service;
+
+import com.ncs.test.member.model.vo.Member;
+
+public interface MemberService {
+ public abstract Member loginMember(Member member);
+}
+
+
+------------------ MemberServiceImpl ------------------
+package com.ncs.test.member.model.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import com.ncs.test.member.model.dao.MemberDAO;
+import com.ncs.test.member.model.vo.Member;
+
+@Service
+public class MemberServiceImpl implements MemberService {
+ @Autowired
+ private MemberDAO memberDAO;
+
+ @Override
+ public Member loginMember(Member member) {
+  return memberDAO.loginMember(member);
+ }
+}
+
+------------------ MemberDAO ------------------
+package com.ncs.test.member.model.dao;
+
+import org.mybatis.spring.SqlSessionTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import com.ncs.test.member.model.vo.Member;
+
+@Repository
+public class MemberDAO {
+ @Autowired
+ private SqlSessionTemplate sqlSession;
+
+ public Member loginMember(Member member) {
+  return sqlSession.selectOne("memberMapper.loginMember", member);
+ }
+}
+
+------------------ member-mapper.xml ------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+"-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="memberMapper">
+ <resultMap type="Member" id="memberResultSet">
+     <id property="memberId" column="MEMBER_ID"/>
+    <result property="memberPwd" column="MEMBER_PWD"/>
+    <result property="memberName" column="MEMBER_NM"/>
+    <result property="memberEnrollDate" column="MEMBER_ENROLL_DT"/>
+ </resultMap>
+ 
+ <select id="loginMember" parameterType="Member" resultMap="memberResultSet">
+  SELECT * FROM MEMBER WHERE MEMBER_ID= #{memberId} AND MEMBER_PWD= #{memberPwd}
+ </select>   
+</mapper>
+
+------------------ mybatis-config.xml ------------------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd" >
+<configuration>
+ <settings> <setting name="jdbcTypeForNull" value="NULL"/> </settings>
+ <typeAliases>  <typeAlias type="com.ncs.test.member.model.vo.Member" alias="Member"/> </typeAliases>
+ <mappers>  <mapper resource="/mappers/member-mapper.xml"/>  </mappers>
+</configuration>
+
+
+<bean id="sqlSessionFactoryBean" class="org.mybatis.spring.SqlSessionFactoryBean">
+    <property name="configLocation" value="classpath:mybatis-config.xml"/>  
+    <property name="dataSource" ref="dataSource"/> 
+</bean>
+
+<bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+    <constructor-arg ref="sqlSessionFactoryBean"/>
+</bean>
+
+
+
+
+-------------------- mybatis-config.xml --------------------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd" >
+<configuration>
+ <settings>
+  <setting name="jdbcTypeForNull" value="NULL"/>
+ </settings>
+
+</configuration>
+
+-------------------- index.jsp --------------------
+
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>로그인 테스트</title>
+</head>
+<body>
+
+ <c:if test="${empty loginMember}">
+  <form action="login" method="post">
+   <label> ID : </label> <input type="text" name="memberId"> <br>
+   <label>PWD : </label> <input type="password" name="memberPwd"> <br>
+   <button>로그인</button>
+  </form>
+ </c:if>
+ 
+ <c:if test="${!empty loginMember}">
+  <h3>${loginMember.memberName} 님 환영합니다.</h3>
+ </c:if>
+</body>
+</html>
+-------------------- errorPage.jsp -------------------------
+<!DOCTYPE html>
+<html>
+그 외 생략...
+<p>${msg } </p>
+</html>
